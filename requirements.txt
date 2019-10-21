@@ -1,0 +1,8 @@
+tensorflow-gpu==2.0.0
+numpy
+scipy
+matplotlib
+scikit-learn
+jupyter
+opencv-contrib-python
+-U git+https://github.com/qubvel/efficientnet

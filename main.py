@@ -1,12 +1,15 @@
 import numpy as np
 import tensorflow as tf
+from tensorflow import keras
 from tensorflow.keras import layers, optimizers
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import GlobalMaxPooling2D, Dropout
-from tensorflow.keras import Sequential
+from tensorflow.keras import Model, Sequential
 from efficientnet.tfkeras import EfficientNetB0
 from efficientnet.tfkeras import center_crop_and_resize, preprocess_input
 from tensorflow.keras.preprocessing import image
+import time
+import os
 
 # Define hyper-params
 width = 150
@@ -21,6 +24,18 @@ input_shape = (height, width, 3)
 no_categories = 2
 step_per_epoch = no_train_examples//batch_size
 val_steps = no_test_examples//batch_size
+
+
+log_dir = os.path.join(os.curdir, "logs")
+
+def get_logid_path(log_dir):
+    # Model name: datetime object containing current date and time
+    # dd/mm/YY H:M:S
+    logid = time.strftime("run_%Y_%m_%d-%H_%M_%S")
+    return os.path.join(log_dir, logid)
+
+logid_path = get_logid_path(log_dir)
+
 
 # Data augmentation
 train_datagen = image.ImageDataGenerator(rescale=1./255,
@@ -49,6 +64,18 @@ model.compile(loss="categorical_crossentropy",
 
 print(model.summary())
 
+
+
+# Using callbacks
+checkpoint_cb = keras.callbacks.ModelCheckpoint(dtime, save_best_only=True)
+early_stopping_cb = keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True, monitor="val_loss")
+tensorboard_cb = keras.callbacks.TensorBoard(logid_path)
+
+# Fit model
+history = model.fit_generator(callbacks=[checkpoint_cb, early_stopping_cb, tensorboard_cb])
+
+# Save model
+model.save("my_model.h5")
 # Step 2: Fine-tuning the pretrained weights
 
 

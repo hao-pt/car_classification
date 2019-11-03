@@ -6,3 +6,5 @@ scikit-learn
 jupyter
 opencv-contrib-python
 -U git+https://github.com/qubvel/efficientnet
+json_tricks
+sklearn

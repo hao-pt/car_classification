@@ -262,41 +262,43 @@ def main(args):
         plt.show()
 
     # Step 2: Fine-tuning the pretrained weights
-    # base_model.trainable = True
-    # plot_model(base_model, to_file='base_model.png', show_shapes=True)
-    # SVG(model_to_dot(base_model).create(prog='dot', format='svg'))
-    # for layer in base_model.layers:
-    #     print(layer.name)
+    if args.fine_tuning:
+          base_model.trainable = True
+          plot_model(base_model, to_file='base_model.png', show_shapes=True)
+          SVG(model_to_dot(base_model).create(prog='dot', format='svg'))
+          for layer in base_model.layers:
+               print(layer.name)
 
 def ParseArgs():
-    parser = argparse.ArgumentParser(description="Car classification")
-    parser.add_argument("-ddir", "--data_dir", type=str, required=True,\
-         help="Data directory")
-    parser.add_argument("-wdir", "--weights_dir", type=str, default="./car_model.h5",\
-         help="Path to pretrained weights of model")
-    parser.add_argument("-mdir", "--model_dir", type=str, default="./logs",\
-         help="Directory to save trained model (*.h5 file)")
-    parser.add_argument("-ldir", "--log_dir", type=str, default="./models",\
-         help="Directory to write logs and save files")
-    parser.add_argument("-af", "--anot_file", type=str, default="",\
-         help="Anotation file of car dataset (a dictionary includes 'boxes', 'scores' and 'scaled_area')")
-    parser.add_argument("-dim", "--dimension", type=int, nargs=2, default=[150, 150],\
-         help="Dimension of input images are fed into model")
-    parser.add_argument("-e", "--no_epochs", type=int, default=20,\
-         help="Number of epochs to run")
-    parser.add_argument("-lr", "--learning_rate", type=float, default=1e-4,\
-         help="Learning rate")
-    parser.add_argument("-kp", "--keep_prob", type=float, default=0.2,\
-         help="Keep probability was added on the top layer")
-    parser.add_argument("-b", "--batch", type=int, default=32,\
-         help="Keep probability was added on the top layer")
-    parser.add_argument("-pl", "--plot_learning_curve", action='store_true',\
-         help="Plot learning curve")
-    parser.add_argument("-val", "--val_every_n_epochs", type=int, default=3,\
-         help="Validate model every n epochs")
+     parser = argparse.ArgumentParser(description="Car classification")
+     parser.add_argument("-ddir", "--data_dir", type=str, required=True,\
+          help="Data directory")
+     parser.add_argument("-wdir", "--weights_dir", type=str, default="./car_model.h5",\
+          help="Path to pretrained weights of model")
+     parser.add_argument("-mdir", "--model_dir", type=str, default="./logs",\
+          help="Directory to save trained model (*.h5 file)")
+     parser.add_argument("-ldir", "--log_dir", type=str, default="./models",\
+          help="Directory to write logs and save files")
+     parser.add_argument("-af", "--anot_file", type=str, default="",\
+          help="Anotation file of car dataset (a dictionary includes 'boxes', 'scores' and 'scaled_area')")
+     parser.add_argument("-dim", "--dimension", type=int, nargs=2, default=[150, 150],\
+          help="Dimension of input images are fed into model")
+     parser.add_argument("-e", "--no_epochs", type=int, default=20,\
+          help="Number of epochs to run")
+     parser.add_argument("-lr", "--learning_rate", type=float, default=1e-4,\
+          help="Learning rate")
+     parser.add_argument("-kp", "--keep_prob", type=float, default=0.2,\
+          help="Keep probability was added on the top layer")
+     parser.add_argument("-b", "--batch", type=int, default=32,\
+          help="Keep probability was added on the top layer")
+     parser.add_argument("-pl", "--plot_learning_curve", action='store_true',\
+          help="Plot learning curve")
+     parser.add_argument("-val", "--val_every_n_epochs", type=int, default=3,\
+          help="Validate model every n epochs")
+     parser.add_argument("-fi", "--fine_tuning", action="store_true",\
+          help="Fine-tune the pretrained model")
 
-
-    return parser.parse_args()
+     return parser.parse_args()
 
 if __name__ == "__main__":
     main(ParseArgs())

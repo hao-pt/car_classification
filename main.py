@@ -183,16 +183,6 @@ def main(args):
     modelid_path, logid_path = get_modelid_and_logid_path(model_dir, log_dir) # Generate modelid and logid
     
     # Load data
-
-    input_shape = (height, width, 3)
-    no_train_examples = 2000
-    no_test_examples = 1000
-    
-    no_categories = len(CLASS_NAMES)
-    step_per_epoch = no_train_examples//batch_size
-    val_steps = no_test_examples//batch_size
-
-    # Load data
     (X_train, Y_train), (X_val, Y_val) = load_data(data_dir, anot_file, (height, width))
 
 
@@ -202,6 +192,15 @@ def main(args):
     print("X_val shape: {}".format(X_val.shape))
     print("Y_val shape: {}".format(Y_val.shape))
 
+    input_shape = (height, width, 3)
+    no_train_examples = Y_train.shape[0]
+    no_val_examples = Y_val.shape[0]
+    
+    no_categories = len(CLASS_NAMES)
+    step_per_epoch = no_train_examples//batch_size
+    val_steps = no_val_examples//args.val_every_n_epochs
+
+    
     # Data augmentation
     train_data, val_data = data_augmentation(X_train, Y_train, X_val, Y_val, batch_size)
 
@@ -218,7 +217,7 @@ def main(args):
     model = classification_layers(base_model, keep_prob, no_categories)
     print(model.summary())
 
-    sgd = optimizers.SGD(learning_rate=lr, momentum=0.9, decay=0.01)
+    sgd = optimizers.SGD(learning_rate=lr, momentum=0.9)
     model.compile(loss="categorical_crossentropy",
                 optimizer=sgd,
                 metrics=["accuracy"])
@@ -293,6 +292,8 @@ def ParseArgs():
          help="Keep probability was added on the top layer")
     parser.add_argument("-pl", "--plot_learning_curve", action='store_true',\
          help="Plot learning curve")
+    parser.add_argument("-val", "--val_every_n_epochs", type=int, default=3,\
+         help="Validate model every n epochs")
 
 
     return parser.parse_args()

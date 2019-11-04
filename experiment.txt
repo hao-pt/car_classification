@@ -1,0 +1,54 @@
+B0
+1/ model_2019_11_03-13_51_41.h5
+Epoch 18/50
+17/17 [==============================] - 22s 1s/step - loss: 0.7623 - accuracy: 0.7661 - val_loss: 0.9971 - val_accuracy: 0.7188
+
+2/ model_2019_11_03-12_43_31.h5
+Train 0.65
+Val 0.58
+
+3/ model_2019_11_03-12_55_10.h5
+Train 0.92
+Val 0.73
+
+4/model_2019_11_03-13_14_07.h5
+Train 0.95
+Val 0.72
+
+5/ model_2019_11_03-15_15_17.h5
+accuracy: 0.7812 - val_loss: 0.9215 - val_accuracy: 0.7292
+
+Without lr scheduler
+6/ model_2019_11_03-15_28_27.h5
+loss: 0.7520 - accuracy: 0.7477 - val_loss: 0.8735 - val_accuracy: 0.7396
+
+B1
+1/ model_2019_11_03-16_12_13.h5
+loss: 0.4065 - accuracy: 0.8785 - val_loss: 0.7111 - val_accuracy: 0.7969
+
+2/ models/model_2019_11_03-16_34_25.h5
+loss: 0.2934 - accuracy: 0.9265 - val_loss: 0.6667 - val_accuracy: 0.8073
+
+B4
+
+1/ model_2019_11_03-14_21_21.h5
+train_acc: 0.83 val_loss: 0.9619 - val_accuracy: 0.7344
+
+Without lr scheduler
+2/ model_2019_11_03-15_43_38.h5
+0.7014 - accuracy: 0.7665 - val_loss: 0.9744 - val_accuracy: 0.7344
+
+Fine-tuning
+1/ model_2019_11_03-17_14_14.h5
+loss: 0.2222 - accuracy: 0.9263 - val_loss: 0.6776 - val_accuracy: 0.7917
+2/ model_2019_11_04-03_33_23.h5
+loss: 0.3699 - accuracy: 0.8913 - val_loss: 0.6393 - val_accuracy: 0.8229
+3/ model_2019_11_04-03_59_40.h5
+loss: 0.3629 - accuracy: 0.8971 - val_loss: 0.6690 - val_accuracy: 0.8021
+4/ model_2019_11_04-04_31_24.h5
+loss: 0.3100 - accuracy: 0.9041 - val_loss: 0.6337 - val_accuracy: 0.8125
+
+start_layer_to_train = "block6a_expand_conv (Conv2D)"
+5/ model_2019_11_04-04_57_29.h5
+loss: 0.3775 - accuracy: 0.8934 - val_loss: 0.6556 - val_accuracy: 0.8073
+

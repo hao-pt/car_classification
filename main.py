@@ -8,13 +8,13 @@ from tensorflow.keras import Model, Sequential
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.utils import plot_model, to_categorical
 from tensorflow.keras.models import load_model
-from efficientnet.tfkeras import EfficientNetB0
+from efficientnet.tfkeras import EfficientNetB0, EfficientNetB1, EfficientNetB4
 from efficientnet.tfkeras import center_crop_and_resize, preprocess_input
 import time
 import os
 import pydot
 from IPython.display import SVG
-# from tensorflow.keras.utils.vis_utils import model_to_dot
+from tensorflow.keras.utils import model_to_dot
 import argparse
 import cv2
 from matplotlib import pyplot as plt
@@ -118,6 +118,16 @@ def load_data(data_dir, anot_file, img_dimension, test_size=0.25, seed=174):
 
     return (X_train, Y_train), (X_test, Y_test)
 
+def lr_scheduler(epoch):
+     """
+     Learning rate scheduler
+     """
+     initial_lr = args.learning_rate
+     drop = 0.5
+     epochs_drop = 10
+     lr = initial_lr * (drop ** np.floor((1 + epoch) / epochs_drop))
+     return lr
+
 def data_augmentation(X_train, Y_train, X_test, Y_test, batch_size):
     """
     Data augmentation
@@ -165,139 +175,202 @@ def data_augmentation(X_train, Y_train, X_test, Y_test, batch_size):
 
 def main(args):
 
-    # Define hyper-params
-    height, width = args.dimension
-    no_epochs = args.no_epochs
-    lr = args.learning_rate
-    keep_prob = args.keep_prob
-    batch_size = args.batch
-    log_dir = args.log_dir # log_dir = os.path.join(os.curdir, "logs")
-    model_dir = args.model_dir
-    data_dir = args.data_dir
-    anot_file = args.anot_file
+     # Define hyper-params
+     height, width = args.dimension
+     no_epochs = args.no_epochs
+     lr = args.learning_rate
+     keep_prob = args.keep_prob
+     batch_size = args.batch
+     log_dir = args.log_dir # log_dir = os.path.join(os.curdir, "logs")
+     model_dir = args.model_dir
+     data_dir = args.data_dir
+     anot_file = args.anot_file
 
-    # Make dir if there are not existed
-    make_dir(log_dir)
-    make_dir(model_dir)
-    
-    modelid_path, logid_path = get_modelid_and_logid_path(model_dir, log_dir) # Generate modelid and logid
-    
-    # Load data
-    (X_train, Y_train), (X_val, Y_val) = load_data(data_dir, anot_file, (height, width))
+     # Make dir if there are not existed
+     make_dir(log_dir)
+     make_dir(model_dir)
+
+     modelid_path, logid_path = get_modelid_and_logid_path(model_dir, log_dir) # Generate modelid and logid
+     
+     print(modelid_path)
+     print(logid_path)
+
+     # Load data
+     (X_train, Y_train), (X_val, Y_val) = load_data(data_dir, anot_file, (height, width))
 
 
-    print("Number of examples: %d" %(Y_train.shape[0]+Y_val.shape[0]))
-    print("X_train shape: {}".format(X_train.shape))
-    print("Y_train shape: {}".format(Y_train.shape))
-    print("X_val shape: {}".format(X_val.shape))
-    print("Y_val shape: {}".format(Y_val.shape))
+     print("Number of examples: %d" %(Y_train.shape[0]+Y_val.shape[0]))
+     print("X_train shape: {}".format(X_train.shape))
+     print("Y_train shape: {}".format(Y_train.shape))
+     print("X_val shape: {}".format(X_val.shape))
+     print("Y_val shape: {}".format(Y_val.shape))
 
-    input_shape = (height, width, 3)
-    no_train_examples = Y_train.shape[0]
-    no_val_examples = Y_val.shape[0]
-    
-    no_categories = len(CLASS_NAMES)
-    step_per_epoch = no_train_examples//batch_size
-    val_steps = no_val_examples//args.val_every_n_epochs
+     input_shape = (height, width, 3)
+     no_train_examples = Y_train.shape[0]
+     no_val_examples = Y_val.shape[0]
 
-    
-    # Data augmentation
-    train_data, val_data = data_augmentation(X_train, Y_train, X_val, Y_val, batch_size)
+     no_categories = len(CLASS_NAMES)
+     step_per_epoch = no_train_examples//batch_size
+     val_steps = no_val_examples//batch_size
 
-    # Step 1: Freeze and Pretrain
 
-    # Load pretrained model as base model
-    # include_top=False mean that we dont take the final FC of original dataset
-    base_model = EfficientNetB0(input_shape=input_shape, weights='imagenet', include_top=False) 
+     # Data augmentation
+     train_data, val_data = data_augmentation(X_train, Y_train, X_val, Y_val, batch_size)
 
-    # Freeze the base_model to avoid destroying the pretrained weights
-    base_model.trainable = False
+     # Load pretrained model as base model
+     # include_top=False mean that we dont take the final FC of original dataset
+     if args.bn == "B0":
+          base_model = EfficientNetB0(input_shape=input_shape, weights='imagenet', include_top=False) 
+     elif args.bn == "B1":
+          base_model = EfficientNetB1(input_shape=input_shape, weights='imagenet', include_top=False) 
+     elif args.bn == "B4":
+          base_model = EfficientNetB4(input_shape=input_shape, weights='imagenet', include_top=False) 
 
-    # Add our top classification layers onto base_model to classify our own dataset
-    model = classification_layers(base_model, keep_prob, no_categories)
-    print(model.summary())
+     if not args.fine_tuning:
+          # Step 1: Freeze and Pretrain
+          # Freeze the base_model to avoid destroying the pretrained weights
+          base_model.trainable = False
+     else:
+          # Step 2: Fine-tuning the pretrained weights
+          # Unfreeze some layers in base_model
+          # Because higher layer encode more dataset-specific features
+          base_model.trainable = True
+          # plot_model(base_model, to_file='base_model.png', show_shapes=True)
+          # SVG(model_to_dot(base_model).create(prog='dot', format='svg'))
+          print(base_model.summary())
+          
+          # Enable start_layer and its successive layers to be trainable 
+          start_layer_to_train = "block4a_expand_conv (Conv2D)" #"block6a_expand_conv (Conv2D)" #"block5a_expand_conv (Conv2D)" 
+          is_trainable = False
+          for layer in base_model.layers:
+               if layer.name == start_layer_to_train:
+                    is_trainable = True
+               
+               if is_trainable:
+                    layer.trainable = True
+               else:
+                    layer.trainable = False
 
-    sgd = optimizers.SGD(learning_rate=lr, momentum=0.9)
-    model.compile(loss="categorical_crossentropy",
-                optimizer=sgd,
-                metrics=["accuracy"])
-    
+     # Add our top classification layers onto base_model to classify our own dataset
+     model = classification_layers(base_model, keep_prob, no_categories)
+     print(model.summary())
 
-    # Using callbacks
-    checkpoint_cb = keras.callbacks.ModelCheckpoint(modelid_path, save_best_only=True)
-    early_stopping_cb = keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True, monitor="val_loss")
-    tensorboard_cb = keras.callbacks.TensorBoard(logid_path)
+     if args.fine_tuning:
+          # Load pretrained model
+          model.load_weights(args.weights_dir)
+          
+     adam = optimizers.Adam(learning_rate=lr)
+     model.compile(loss="categorical_crossentropy",
+                    optimizer=adam,
+                    metrics=["accuracy"])
 
-    # Fit model
-    history = model.fit_generator(train_data, \
-                            steps_per_epoch=step_per_epoch, \
-                            epochs=no_epochs, \
-                            validation_data=val_data, \
-                            validation_steps= val_steps, \
-                            verbose=1, \
-                            use_multiprocessing=True, \
-                            workers=4, \
-                            callbacks=[checkpoint_cb, early_stopping_cb, tensorboard_cb])
 
-    # Save model
-    model.save(modelid_path)
+     # Using callbacks
+     checkpoint_cb = keras.callbacks.ModelCheckpoint(modelid_path, save_best_only=True)
+     early_stopping_cb = keras.callbacks.EarlyStopping(patience=args.patience, restore_best_weights=True, monitor="val_loss")
+     tensorboard_cb = keras.callbacks.TensorBoard(logid_path)
+     lr_scheduler_cb = keras.callbacks.LearningRateScheduler(lr_scheduler)
 
-    if args.plot_learning_curve:
-        # Plot training & validation accuracy values
-        plt.plot(history.history['acc'])
-        plt.plot(history.history['val_acc'])
-        plt.title('Model accuracy')
-        plt.ylabel('Accuracy')
-        plt.xlabel('Epoch')
-        plt.legend(['Train', 'Val'], loc='upper left')
-        plt.show()
+     if args.off_lr_scheduler == False:
+          callbacks = [checkpoint_cb, early_stopping_cb, tensorboard_cb, lr_scheduler_cb]
+     else:
+          callbacks = [checkpoint_cb, early_stopping_cb, tensorboard_cb]
 
-        # Plot training & validation loss values
-        plt.plot(history.history['loss'])
-        plt.plot(history.history['val_loss'])
-        plt.title('Model loss')
-        plt.ylabel('Loss')
-        plt.xlabel('Epoch')
-        plt.legend(['Train', 'Val'], loc='upper left')
-        plt.show()
+     # Fit model
+     history = model.fit_generator(train_data, \
+                              steps_per_epoch=step_per_epoch, \
+                              epochs=no_epochs, \
+                              validation_data=val_data, \
+                              validation_steps= val_steps, \
+                              verbose=1, \
+                              use_multiprocessing=True, \
+                              workers=4, \
+                              callbacks=callbacks)
 
-    # Step 2: Fine-tuning the pretrained weights
-    # base_model.trainable = True
-    # plot_model(base_model, to_file='base_model.png', show_shapes=True)
-    # SVG(model_to_dot(base_model).create(prog='dot', format='svg'))
-    # for layer in base_model.layers:
-    #     print(layer.name)
+     # Save model
+     model.save(modelid_path)
+
+     if args.plot_learning_curve:
+          # summarize history for accuracy
+          plt.plot(history.history['accuracy'])
+          plt.plot(history.history['val_accuracy'])
+          plt.title('model accuracy')
+          plt.ylabel('accuracy')
+          plt.xlabel('epoch')
+          plt.legend(['train', 'test'], loc='upper left')
+          plt.savefig(os.path.join(logid_path, "acc_curve.png"))
+          plt.show()
+          # summarize history for loss
+          plt.plot(history.history['loss'])
+          plt.plot(history.history['val_loss'])
+          plt.title('model loss')
+          plt.ylabel('loss')
+          plt.xlabel('epoch')
+          plt.legend(['train', 'test'], loc='upper left')
+          plt.savefig(os.path.join(logid_path, "loss_curve.png"))
+          plt.show()
+
+     # Save arguments
+     with open(os.path.join(logid_path, "revision_infor.txt"), "wt") as f:
+          f.write(args.__str__())
+          f.write("\n")
+          f.write(modelid_path)
+          f.write("\n")
+          f.write(logid_path)
+          f.write("\n")
+          if args.fine_tuning:
+               f.write(start_layer_to_train)
+               f.write("\n")
+          f.write("Acc, Val acc, loss, Val loss")
+          f.write("\n")
+          f.write(str(history.history['accuracy']))
+          f.write("\n")
+          f.write(str(history.history['val_accuracy']))
+          f.write("\n")
+          f.write(str(history.history['loss']))
+          f.write("\n")
+          f.write(str(history.history['val_loss']))
+          
 
 def ParseArgs():
-    parser = argparse.ArgumentParser(description="Car classification")
-    parser.add_argument("-ddir", "--data_dir", type=str, required=True,\
-         help="Data directory")
-    parser.add_argument("-wdir", "--weights_dir", type=str, default="./car_model.h5",\
-         help="Path to pretrained weights of model")
-    parser.add_argument("-mdir", "--model_dir", type=str, default="./logs",\
-         help="Directory to save trained model (*.h5 file)")
-    parser.add_argument("-ldir", "--log_dir", type=str, default="./models",\
-         help="Directory to write logs and save files")
-    parser.add_argument("-af", "--anot_file", type=str, default="",\
-         help="Anotation file of car dataset (a dictionary includes 'boxes', 'scores' and 'scaled_area')")
-    parser.add_argument("-dim", "--dimension", type=int, nargs=2, default=[150, 150],\
-         help="Dimension of input images are fed into model")
-    parser.add_argument("-e", "--no_epochs", type=int, default=20,\
-         help="Number of epochs to run")
-    parser.add_argument("-lr", "--learning_rate", type=float, default=1e-4,\
-         help="Learning rate")
-    parser.add_argument("-kp", "--keep_prob", type=float, default=0.2,\
-         help="Keep probability was added on the top layer")
-    parser.add_argument("-b", "--batch", type=int, default=32,\
-         help="Keep probability was added on the top layer")
-    parser.add_argument("-pl", "--plot_learning_curve", action='store_true',\
-         help="Plot learning curve")
-    parser.add_argument("-val", "--val_every_n_epochs", type=int, default=3,\
-         help="Validate model every n epochs")
+     parser = argparse.ArgumentParser(description="Car classification")
+     parser.add_argument("-ddir", "--data_dir", type=str, required=True,\
+          help="Data directory")
+     parser.add_argument("-wdir", "--weights_dir", type=str, default="",\
+          help="Path to pretrained weights of model")
+     parser.add_argument("-mdir", "--model_dir", type=str, default="./models",\
+          help="Directory to save trained model (*.h5 file)")
+     parser.add_argument("-ldir", "--log_dir", type=str, default="./logs",\
+          help="Directory to write logs and save files")
+     parser.add_argument("-af", "--anot_file", type=str, default="",\
+          help="Anotation file of car dataset (a dictionary includes 'boxes', 'scores' and 'scaled_area')")
+     parser.add_argument("-dim", "--dimension", type=int, nargs=2, default=[150, 150],\
+          help="Dimension of input images are fed into model")
+     parser.add_argument("-e", "--no_epochs", type=int, default=20,\
+          help="Number of epochs to run")
+     parser.add_argument("-lr", "--learning_rate", type=float, default=1e-4,\
+          help="Learning rate")
+     parser.add_argument("-kp", "--keep_prob", type=float, default=0.2,\
+          help="Keep probability was added on the top layer")
+     parser.add_argument("-b", "--batch", type=int, default=32,\
+          help="Keep probability was added on the top layer")
+     parser.add_argument("-pl", "--plot_learning_curve", action='store_true',\
+          help="Plot learning curve")
+     parser.add_argument("-fi", "--fine_tuning", action="store_true",\
+          help="Fine-tune the pretrained model")
+     parser.add_argument("-pt", "--patience", type=int, default=10,\
+          help="Patience is number of epochs to slow down the earlier stopping")
+     parser.add_argument("-bn", "--bn", type=str, default= 'B0', choices=["B0", "B1", "B2", "B4"],\
+          help="Model type such as B0, B1, B2, B4.")
+     parser.add_argument("-off_lr_sch", "--off_lr_scheduler", action='store_true',\
+          help="Turn off learning rate scheduler")
 
 
-    return parser.parse_args()
+     return parser.parse_args()
+
+# Parse Args
+args = ParseArgs()
 
 if __name__ == "__main__":
-    main(ParseArgs())
+    main(args)
 

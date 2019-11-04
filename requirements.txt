@@ -7,3 +7,4 @@ jupyter
 opencv-contrib-python
 json_tricks
 sklearn
+git+https://github.com/qubvel/efficientnet

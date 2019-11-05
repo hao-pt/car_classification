@@ -42,7 +42,7 @@ Arguments:
 
 Our trained model and log files will save in the current directory when running with format: `model_%Y_%m_%d-%H_%M_%S.h5` and `run_%Y_%m_%d-%H_%M_%S`. For examples: `model_2019_11_03-17_14_14.h5` and `run_2019_11_03-17_14_14`.
 
-The `run_*` folder contain the following files:
+The `run_*` folder contains the following files:
 ```
 |   acc_curve.png
 |   loss_curve.png

@@ -8,7 +8,7 @@ from tensorflow.keras import Model, Sequential
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.utils import plot_model, to_categorical
 from tensorflow.keras.models import load_model
-from efficientnet.tfkeras import EfficientNetB0, EfficientNetB1, EfficientNetB4
+from efficientnet.tfkeras import EfficientNetB0, EfficientNetB1, EfficientNetB2, EfficientNetB3, EfficientNetB4
 from efficientnet.tfkeras import center_crop_and_resize, preprocess_input
 import time
 import os
@@ -222,7 +222,11 @@ def main(args):
      if args.bn == "B0":
           base_model = EfficientNetB0(input_shape=input_shape, weights='imagenet', include_top=False) 
      elif args.bn == "B1":
-          base_model = EfficientNetB1(input_shape=input_shape, weights='imagenet', include_top=False) 
+          base_model = EfficientNetB1(input_shape=input_shape, weights='imagenet', include_top=False)
+     elif args.bn == "B2":
+          base_model = EfficientNetB2(input_shape=input_shape, weights='imagenet', include_top=False)
+     elif args.bn == "B3":
+          base_model = EfficientNetB3(input_shape=input_shape, weights='imagenet', include_top=False) 
      elif args.bn == "B4":
           base_model = EfficientNetB4(input_shape=input_shape, weights='imagenet', include_top=False) 
 
@@ -240,8 +244,9 @@ def main(args):
           print(base_model.summary())
           
           # Enable start_layer and its successive layers to be trainable 
-          start_layer_to_train = "block4a_expand_conv (Conv2D)" #"block6a_expand_conv (Conv2D)" #"block5a_expand_conv (Conv2D)" 
-          is_trainable = False
+          start_layer_to_train = args.start_layer_to_train #"block4a_expand_conv (Conv2D)" #"block6a_expand_conv (Conv2D)" #"block5a_expand_conv (Conv2D)" 
+          # If start_layer_to_train == "", we will train the entire network
+          is_trainable = False if start_layer_to_train != "" else True
           for layer in base_model.layers:
                if layer.name == start_layer_to_train:
                     is_trainable = True
@@ -360,10 +365,15 @@ def ParseArgs():
           help="Fine-tune the pretrained model")
      parser.add_argument("-pt", "--patience", type=int, default=10,\
           help="Patience is number of epochs to slow down the earlier stopping")
-     parser.add_argument("-bn", "--bn", type=str, default= 'B0', choices=["B0", "B1", "B2", "B4"],\
-          help="Model type such as B0, B1, B2, B4.")
+     parser.add_argument("-bn", "--bn", type=str, default= 'B0', choices=["B0", "B1", "B2", "B3", "B4"],\
+          help="Model type such as B0, B1, B2, B3, B4.")
      parser.add_argument("-off_lr_sch", "--off_lr_scheduler", action='store_true',\
           help="Turn off learning rate scheduler")
+     parser.add_argument("-st", "--start_layer_to_train", type=str, default="block5a_expand_conv (Conv2D)",\
+        choices=["block5a_expand_conv (Conv2D)", "block4a_expand_conv (Conv2D)",\
+              "block6a_expand_conv (Conv2D)", "block7a_expand_conv (Conv2D)", "block6e_se_excite (Multiply)",\
+               "block7a_se_excite (Multiply)", ""],\
+        help="Start layer to fine-tune from EfficientNet model. Notice: for empty string '' means that fine-tune the entire network")
 
 
      return parser.parse_args()

@@ -20,7 +20,7 @@ samples = expand_dims(data, 0)
 # datagen = ImageDataGenerator(shear_range=0.2)
 # datagen = ImageDataGenerator(height_shift_range=0.2)
 # datagen = ImageDataGenerator(width_shift_range=0.2)
-datagen = ImageDataGenerator(brightness_range=[0.7, 1.1])
+# datagen = ImageDataGenerator(brightness_range=[0.7, 1.1])
 
 
 

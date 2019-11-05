@@ -29,6 +29,18 @@ loss: 0.4065 - accuracy: 0.8785 - val_loss: 0.7111 - val_accuracy: 0.7969
 2/ models/model_2019_11_03-16_34_25.h5
 loss: 0.2934 - accuracy: 0.9265 - val_loss: 0.6667 - val_accuracy: 0.8073
 
+B2
+1/ model_2019_11_04-08_16_48.h5
+loss: 0.3124 - accuracy: 0.9245 - val_loss: 0.8286 - val_accuracy: 0.7500
+2/ model_2019_11_04-08_49_24.h5
+loss: 0.6581 - accuracy: 0.8748 - val_loss: 1.0509 - val_accuracy: 0.7188
+
+B3:
+1/ model_2019_11_04-06_44_50.h5
+loss: 0.4178 - accuracy: 0.8840 - val_loss: 0.8492 - val_accuracy: 0.7656
+2/ model_2019_11_04-07_22_00.h5
+loss: 0.6758 - accuracy: 0.7638 - val_loss: 0.9288 - val_accuracy: 0.7344
+
 B4
 
 1/ model_2019_11_03-14_21_21.h5
@@ -52,3 +64,37 @@ start_layer_to_train = "block6a_expand_conv (Conv2D)"
 5/ model_2019_11_04-04_57_29.h5
 loss: 0.3775 - accuracy: 0.8934 - val_loss: 0.6556 - val_accuracy: 0.8073
 
+block4a_expand_conv (Conv2D)
+1/ model_2019_11_04-06_02_34.h5
+loss: 0.3641 - accuracy: 0.9098 - val_loss: 0.6712 - val_accuracy: 0.8073
+2/ model_2019_11_04-06_15_47.h5
+loss: 0.3661 - accuracy: 0.8858 - val_loss: 0.6642 - val_accuracy: 0.8021
+
+block7a_expand_conv (Conv2D)
+1/ model_2019_11_04-17_08_29.h5
+loss: 0.3050 - accuracy: 0.9171 - val_loss: 0.6531 - val_accuracy: 0.8229
+2/  model_2019_11_05-03_39_47.h5
+loss: 0.3052 - accuracy: 0.9170 - val_loss: 0.6735 - val_accuracy: 0.8281
+
+block7a_se_excite (Multiply)
+1/ model_2019_11_04-17_42_51.h5
+loss: 0.3338 - accuracy: 0.9098 - val_loss: 0.6819 - val_accuracy: 0.8073
+
+2/ model_2019_11_05-02_36_08.h5
+loss: 0.3949 - accuracy: 0.8875 - val_loss: 0.6698 - val_accuracy: 0.7969
+
+B0
+1/ model_2019_11_04-14_09_12.h5
+loss: 0.4829 - accuracy: 0.8508 - val_loss: 0.8294 - val_accuracy: 0.7708
+
+Test
+Not fine-tune
+1/ model_2019_11_03-16_34_25.h5
+1.952720168745998, 0.47252747
+
+fine-tune
+1/ model_2019_11_04-17_42_51.h5
+1.926266834412739, 0.47985348
+
+2/ 
+1.9192436850551284, 0.47252747

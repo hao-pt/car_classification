@@ -129,6 +129,7 @@ def main(args):
     logid_path = get_logid_path(log_dir) # Generate logid
 
     print(logid_path)
+    make_dir(logid_path)
 
     # Load data
     X_test, Y_test = load_data(data_dir, anot_file, (height, width))
@@ -142,11 +143,9 @@ def main(args):
 
 
     no_categories = len(CLASS_NAMES)
-    step_per_epoch = no_train_examples//batch_size
-    val_steps = no_val_examples//batch_size
 
     # rescale images
-    X_test /= 255.0
+    X_test = X_test / 255.0
 
     # Load pretrained model as base model
     # include_top=False mean that we dont take the final FC of original dataset
@@ -157,6 +156,25 @@ def main(args):
     elif args.bn == "B4":
         base_model = EfficientNetB4(input_shape=input_shape, weights='imagenet', include_top=False) 
 
+    base_model.trainable = True
+    print(base_model.summary())
+    
+    # Enable start_layer and its successive layers to be trainable 
+    start_layer_to_train = args.start_layer_to_train #"block5a_expand_conv (Conv2D)" #"block4a_expand_conv (Conv2D)" #"block6a_expand_conv (Conv2D)"  
+    # Check if using fine-tune
+    if start_layer_to_train != "0":
+        # If start_layer_to_train == "", we will train the entire network
+        is_trainable = False if start_layer_to_train != "" else True
+        for layer in base_model.layers:
+            if layer.name == start_layer_to_train:
+                is_trainable = True
+            
+            if is_trainable:
+                layer.trainable = True
+            else:
+                layer.trainable = False
+    else:
+        base_model.trainable = False
 
     # Add our top classification layers onto base_model to classify our own dataset
     model = classification_layers(base_model, keep_prob, no_categories)
@@ -164,6 +182,11 @@ def main(args):
 
     # Load pretrained model
     model.load_weights(args.weights_dir)
+
+    # Compile the model
+    model.compile(loss="categorical_crossentropy",
+                    optimizer="sgd",
+                    metrics=["accuracy"])
 
     # Evaluate 
     # Scalars contain [loss, acc]
@@ -177,7 +200,7 @@ def main(args):
         f.write("\n")
         f.write(logid_path)
         f.write("\n")
-        f.write(scalars)      
+        f.write(str(scalars))      
 
 def ParseArgs():
     parser = argparse.ArgumentParser(description="Car classification")
@@ -197,8 +220,12 @@ def ParseArgs():
         help="Keep probability was added on the top layer")
     parser.add_argument("-pl", "--plot_learning_curve", action='store_true',\
         help="Plot learning curve")
-    parser.add_argument("-bn", "--bn", type=str, default= 'B0', choices=["B0", "B1", "B4"],\
+    parser.add_argument("-bn", "--bn", type=str, default= 'B0', choices=["B0", "B1", "B2", "B3", "B4"],\
         help="Model type such as B0, B4.")
+    parser.add_argument("-st", "--start_layer_to_train", type=str, default="block5a_expand_conv (Conv2D)",\
+        choices=["block5a_expand_conv (Conv2D)", "block4a_expand_conv (Conv2D)", "block6a_expand_conv (Conv2D)", \
+            "block7a_se_excite (Multiply)", "0", "", "block7a_expand_conv (Conv2D)"],\
+        help="Start layer to fine-tune from EfficientNet model. Notice: for empty string '' means that fine-tune the entire network and '0' means that we dont use fine-tuning at all")
 
     return parser.parse_args()
 

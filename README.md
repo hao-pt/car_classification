@@ -40,6 +40,28 @@ Arguments:
 - dim: image dimension (height, width)
 - bn: version of EfficientNet such as B0, B1, ..., B4
 
+Our trained model and log files will save in the current directory when running with format: `model_%Y_%m_%d-%H_%M_%S.h5` and `run_%Y_%m_%d-%H_%M_%S`. For examples: `model_2019_11_03-17_14_14.h5` and `run_2019_11_03-17_14_14`.
+
+The `run_*` folder contain the following files:
+```
+|   acc_curve.png
+|   loss_curve.png
+|   revision_infor.txt
+|
++---train
+|   |   events.out.tfevents.1572787613.6fa19c9d1e4a.15059.11989.v2
+|   |   events.out.tfevents.1572787621.6fa19c9d1e4a.profile-empty
+|   |
+|   \---plugins
+|       \---profile
+|           \---2019-11-03_13-27-01
+|                   local.trace
+|
+\---validation
+        events.out.tfevents.1572787637.6fa19c9d1e4a.15059.70893.v2
+
+```
+
 ### Fine-tune
 
 For example:
